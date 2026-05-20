@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Уральск Онлайн | Лидеры фракций</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --surface: rgba(17, 21, 32, .86);
+            --surface-strong: rgba(21, 27, 40, .94);
+            --line: rgba(226, 232, 240, .09);
+            --text: #f5f7fb;
+            --muted: #8c98aa;
+            --accent: #d7a85d;
+            --green: #40c785;
+            --orange: #f59e42;
+            --red: #ff6b6b;
+            --blue: #6aa7ff;
+            --radius-xl: 28px;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            padding: 28px;
+            background: radial-gradient(circle at 18% -8%, rgba(215,168,93,.18), transparent 34%),
+                        radial-gradient(circle at 84% 10%, rgba(106,167,255,.13), transparent 28%),
+                        linear-gradient(180deg, #090b11 0%, #07090e 100%);
+            font-family: Inter, system-ui, sans-serif;
+            color: var(--text);
+        }
+
+        .container { width: min(1480px, 100%); margin: 0 auto; }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+            padding: 12px 16px;
+            background: rgba(8, 10, 15, .74);
+            backdrop-filter: blur(22px);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+        }
+
+        .logo-area h1 {
+            font-size: 1.55rem;
+            background: linear-gradient(140deg, #f2e0bc, #e0ba6f);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .logo-area p { font-size: 0.7rem; color: var(--muted); }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            background: rgba(0,0,0,0.3);
+            padding: 4px;
+            border-radius: 60px;
+        }
+        .tab-btn {
+            padding: 8px 20px;
+            border-radius: 40px;
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .tab-btn.active { background: var(--accent); color: #0c0f18; }
+
+        .btn-group { display: flex; flex-wrap: wrap; gap: 12px; }
+        .btn {
+            padding: 8px 18px;
+            border-radius: 80px;
+            font-size: 0.85rem;
+            background: rgba(255,255,255,.04);
+            border: 1px solid var(--line);
+            color: var(--text);
+            cursor: pointer;
+        }
+        .btn-primary { background: var(--accent); border-color: var(--accent); color: #0c0f18; font-weight: 600; }
+        .btn-danger { background: rgba(220,70,70,0.2); border-color: rgba(255,100,100,0.3); }
+
+        .sync-status { font-size: 0.7rem; padding: 4px 12px; border-radius: 20px; background: rgba(0,0,0,0.3); }
+        .sync-status.synced { color: var(--green); }
+        .sync-status.syncing { color: var(--orange); }
+
+        .page { display: none; }
+        .page.active { display: block; }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            padding: 1.2rem;
+        }
+        .stat-card .stat-value { font-size: 2rem; font-weight: 700; color: var(--accent); }
+
+        .card {
+            background: var(--surface);
+            backdrop-filter: blur(6px);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-xl);
+            padding: 1.6rem;
+            margin-bottom: 2rem;
+        }
+
+        .table-wrapper { overflow-x: auto; border-radius: 16px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th { text-align: left; padding: 14px 8px; background: rgba(0,0,0,0.35); color: var(--accent); }
+        td { padding: 12px 8px; border-bottom: 1px solid var(--line); }
+        
+        input {
+            background: #0f121d; border: 1px solid var(--line);
+            border-radius: 8px; padding: 4px 8px; color: var(--text); width: 60px;
+        }
+        
+        .gov-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        .gov-card {
+            background: var(--surface-strong);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            border: 1px solid var(--line);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="topbar">
+        <div class="logo-area"><h1>⚡ Уральск Онлайн</h1><p>Лидеры фракций</p></div>
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="showPage('main')">📊 Рейтинг</button>
+            <button class="tab-btn" onclick="showPage('hours')">⏱️ Часы</button>
+        </div>
+        <div id="syncStatus" class="sync-status syncing">🔄 Синхронизация...</div>
+    </div>
+
+    <div id="mainPage" class="page active">
+        <div class="stats-panel">
+            <div class="stat-card"><div>🏆 Рекорд</div><div class="stat-value" id="bestScore">0</div></div>
+            <div class="stat-card"><div>📈 Всего баллов</div><div class="stat-value" id="positivePoints">0</div></div>
+        </div>
+
+        <div class="card">
+            <h2>🏛️ Государственные структуры</h2>
+            <div class="gov-grid" id="govGrid"></div>
+        </div>
+
+        <div class="card">
+            <h2>📊 Таблица эффективности</h2>
+            <div class="table-wrapper">
+                <table id="ratingTable">
+                    <thead><tr id="ratingHeaders"></tr></thead>
+                    <tbody id="ratingBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="hoursPage" class="page">
+        <div class="card">
+            <h2>⏱️ Часы лидеров</h2>
+            <div class="table-wrapper">
+                <table id="hoursTable">
+                    <thead><tr><th>Фракция</th><th>ПН</th><th>ВТ</th><th>СР</th><th>ЧТ</th><th>ПТ</th><th>СБ</th><th>ВС</th><th>Итог</th></tr></thead>
+                    <tbody id="hoursBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== НАСТРОЙКИ (ВСТАВЬТЕ СВОЮ ССЫЛКУ) ==========
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyxELONQ6SZDn-JleFSZn4zim1lGGPIjVEuTB58uZbov97NzgqmbKGGtnmD7pQLCclunQ/exec";
+
+    // Данные по умолчанию
+    let priceItems = [
+        { id: "gmp", name: "ГМП", value: 250 },
+        { id: "mp", name: "МП", value: 150 },
+        { id: "repr", name: "Выговоры", value: 100 }
+    ];
+
+    let factions = [
+        { name: "МВД", leader: "Иванов И.И." },
+        { name: "ФСБ", leader: "Петров П.П." },
+        { name: "МЗ", leader: "Сидоров С.С." }
+    ];
+
+    let stats = {}; 
+    let hoursData = {};
+    let lastSyncVersion = 0;
+
+    // Вспомогательные функции
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function showPage(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id + 'Page').classList.add('active');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    // Инициализация пустых данных
+    function initData() {
+        factions.forEach((f, i) => {
+            if (!stats[i]) stats[i] = {};
+            if (!hoursData[i]) hoursData[i] = [0,0,0,0,0,0,0];
+            priceItems.forEach(p => {
+                if (stats[i][p.id] === undefined) stats[i][p.id] = 0;
+            });
+        });
+    }
+
+    // Отрисовка интерфейса
+    function updateUI() {
+        initData();
+        renderGovGrid();
+        renderRatingTable();
+        renderHoursTable();
+        calculateGlobalStats();
+    }
+
+    function renderGovGrid() {
+        const grid = document.getElementById("govGrid");
+        grid.innerHTML = factions.map((f, i) => `
+            <div class="gov-card">
+                <strong>${escapeHtml(f.name)}</strong><br>
+                <small>Лидер: ${escapeHtml(f.leader)}</small>
+            </div>
+        `).join('');
+    }
+
+    function renderRatingTable() {
+        const head = document.getElementById("ratingHeaders");
+        head.innerHTML = '<th>Фракция</th>' + priceItems.map(p => `<th>${p.name}</th>`).join('') + '<th>Итого</th>';
+
+        const body = document.getElementById("ratingBody");
+        body.innerHTML = factions.map((f, i) => {
+            let total = 0;
+            const inputs = priceItems.map(p => {
+                const val = stats[i][p.id] || 0;
+                total += (p.id === 'repr' ? -(val * p.value) : (val * p.value));
+                return `<td><input type="number" value="${val}" onchange="updateStat(${i}, '${p.id}', this.value)"></td>`;
+            }).join('');
+            return `<tr><td>${f.name}</td>${inputs}<td><strong>${total}</strong></td></tr>`;
+        }).join('');
+    }
+
+    function renderHoursTable() {
+        const body = document.getElementById("hoursBody");
+        body.innerHTML = factions.map((f, i) => {
+            let total = 0;
+            const inputs = hoursData[i].map((h, day) => {
+                total += parseFloat(h) || 0;
+                return `<td><input type="number" value="${h}" step="0.1" onchange="updateHour(${i}, ${day}, this.value)"></td>`;
+            }).join('');
+            return `<tr><td>${f.name}</td>${inputs}<td>${total.toFixed(1)}</td></tr>`;
+        }).join('');
+    }
+
+    function calculateGlobalStats() {
+        let best = 0;
+        let totalPoints = 0;
+        factions.forEach((f, i) => {
+            let currentTotal = 0;
+            priceItems.forEach(p => {
+                const val = stats[i][p.id] || 0;
+                const pts = val * p.value;
+                if(p.id !== 'repr') totalPoints += pts;
+                currentTotal += (p.id === 'repr' ? -pts : pts);
+            });
+            if(currentTotal > best) best = currentTotal;
+        });
+        document.getElementById("bestScore").innerText = best;
+        document.getElementById("positivePoints").innerText = totalPoints;
+    }
+
+    // Обновление данных
+    function updateStat(fIdx, pId, val) {
+        stats[fIdx][pId] = parseInt(val) || 0;
+        saveAll();
+    }
+
+    function updateHour(fIdx, day, val) {
+        hoursData[fIdx][day] = parseFloat(val) || 0;
+        saveAll();
+    }
+
+    // Синхронизация
+    async function saveAll() {
+        const data = {
+            version: Date.now(),
+            stats, hoursData, factions, priceItems
+        };
+        localStorage.setItem("ural_data", JSON.stringify(data));
+        updateUI();
+
+        try {
+            await fetch(`${SCRIPT_URL}?action=save&value=${encodeURIComponent(JSON.stringify(data))}`);
+            document.getElementById("syncStatus").innerHTML = "✅ Сохранено";
+        } catch(e) {
+            document.getElementById("syncStatus").innerHTML = "⚠️ Ошибка сети";
+        }
+    }
+
+    async function sync() {
+        try {
+            const res = await fetch(`${SCRIPT_URL}?action=load&t=${Date.now()}`);
+            const result = await res.json();
+            if (result.status === "ok" && result.data && result.data.version > lastSyncVersion) {
+                stats = result.data.stats || stats;
+                hoursData = result.data.hoursData || hoursData;
+                lastSyncVersion = result.data.version;
+                updateUI();
+                document.getElementById("syncStatus").innerHTML = "✅ Синхронизировано";
+            }
+        } catch(e) {
+            document.getElementById("syncStatus").innerHTML = "⚠️ Автономный режим";
+        }
+    }
+
+    // Старт
+    const local = localStorage.getItem("ural_data");
+    if(local) {
+        const d = JSON.parse(local);
+        stats = d.stats;
+        hoursData = d.hoursData;
+    }
+    
+    updateUI();
+    setInterval(sync, 10000); // Проверка обновлений каждые 10 сек
+    sync();
+
+</script>
+</body>
+</html>
